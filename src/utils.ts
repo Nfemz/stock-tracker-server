@@ -10,28 +10,13 @@ const GME_SUBREDDIT = "r/GME.json";
  */
 const getPostHtmlByUrl = async (url: string) => {
   if (url) {
-    const posts = await fetchSubredditPosts();
-    let foundPost: any = undefined;
-    posts &&
-      posts.forEach((post: any) => {
-        if (post.data.url === url) {
-          foundPost = post;
-        }
-      });
-    return foundPost ? foundPost.data.selftext_html : foundPost;
-  }
-};
+    if (url.endsWith("/")) {
+      url = url.slice(0, -1);
+    }
+    url += ".json";
 
-/**
- *
- * @returns an array of res data of the top 20 posts of a subreddit
- */
-const fetchSubredditPosts = async () => {
-  try {
-    const res = await axios(`${BASE_URL}${GME_SUBREDDIT}`);
-    return res.data.data.children;
-  } catch (e) {
-    console.error(e);
+    const post = await axios.get(url);
+    return post.data[0].data.children[0].data.selftext_html;
   }
 };
 
@@ -43,7 +28,14 @@ const fetchSubredditPosts = async () => {
 export function subscribeSubredditPost(url: string, ws: WebSocket) {
   getPostHtmlByUrl(url)
     .then((res) => {
-      res && ws.send(res);
+      if (res && ws.readyState == ws.OPEN) {
+        res && ws.send(JSON.stringify([res]));
+      }
+      return;
     })
-    .finally(() => subscribeSubredditPost(url, ws));
+    .finally(() => subscribeSubredditPost(url, ws))
+    .catch((err) => {
+      console.warn(err);
+      return;
+    });
 }

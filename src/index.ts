@@ -12,9 +12,19 @@ enableWs(app);
 const PORT = 9000;
 
 app.ws("/subscribe/reddit", (ws: any, req: any) => {
-  const { url } = req.body;
-  console.warn(url);
-  subscribeSubredditPost(url, ws);
+  ws.send(
+    JSON.stringify([
+      {
+        message: "Connected to reddit thread poll websocket successfully.",
+        type: "message",
+      },
+    ])
+  );
+
+  ws.on("message", (event: any) => {
+    const data = JSON.parse(event).data;
+    subscribeSubredditPost(data.url, ws);
+  });
 });
 
 app.listen(PORT, () => console.info(`Server listening on Port:${PORT}`));
