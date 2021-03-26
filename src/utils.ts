@@ -1,7 +1,5 @@
 const axios = require("axios");
 const _ = require("underscore");
-const BASE_URL = "https://www.reddit.com/";
-const GME_SUBREDDIT = "r/GME.json";
 
 /**
  *
@@ -28,14 +26,13 @@ const getPostHtmlByUrl = async (url: string) => {
 export function subscribeSubredditPost(url: string, ws: WebSocket) {
   getPostHtmlByUrl(url)
     .then((res) => {
-      if (res && ws.readyState == ws.OPEN) {
-        res && ws.send(JSON.stringify([res]));
-      }
-      return;
+      res && ws.send(JSON.stringify([res]));
     })
-    .finally(() => subscribeSubredditPost(url, ws))
+    .then(() => {
+      ws.readyState == ws.OPEN && subscribeSubredditPost(url, ws);
+    })
     .catch((err) => {
-      console.warn(err);
+      console.warn(err.Error);
       return;
     });
 }
